@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evaluación de entradas léxicas generadas por LLMs</title>
+  <style>
+    body{font-family:Arial,sans-serif;margin:0;background:#f5f7fb;color:#1f2937}
+    .container{max-width:1100px;margin:0 auto;padding:24px}
+    .card{background:#fff;border-radius:14px;padding:22px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:18px}
+    h1,h2,h3{margin:0 0 12px}
+    .muted{color:#6b7280}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    label{display:block;font-weight:700;margin-bottom:6px}
+    input[type=text],input[type=date],textarea,select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit;background:#fff}
+    textarea{min-height:90px;resize:vertical}
+    .section{margin-top:18px;padding-top:18px;border-top:1px solid #e5e7eb}
+    .dim{border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin:14px 0;background:#fafafa}
+    .dimhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+    .dimtitle{font-size:1.03rem;font-weight:700}
+    .dimdesc{margin:8px 0 10px;color:#374151}
+    .obs{margin-top:10px}
+    .obs ul{margin:8px 0 0 18px}
+    .obs li{margin:4px 0}
+    .scale{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:10px}
+    .scale label{font-weight:600;background:#fff;border:1px solid #dbe2ea;border-radius:10px;padding:10px 8px;text-align:center;cursor:pointer}
+    .scale input{display:block;margin:0 auto 6px}
+    .footer{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    button{background:#2563eb;color:#fff;border:0;padding:12px 18px;border-radius:10px;font-size:1rem;cursor:pointer}
+    button.secondary{background:#475569}
+    @media (max-width:760px){.grid,.scale{grid-template-columns:1fr}}
+
+
+/* Forzar la sección del LLM a ocupar todo el ancho, incluso si hereda grid */
+.llm-section {
+  width: 100%;
+  max-width: 100%;
+  grid-column: 1 / -1;
+}
+
+/* Forzar tamaño visible del visor del LLM */
+.llm-section iframe {
+  display: block;
+  width: 100%;
+  min-height: 600px;    /* ← ESTA ES LA CLAVE */
+  height: 600px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fafafa;
+}
+/* Escala Likert y Dimensiones en una sola columna vertical */
+.likert-section,
+.dimensions-section {
+  width: 100%;
+  grid-column: 1 / -1;
+}
+``
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="card">
+    <h1>Evaluación de user-friendliness</h1>
+    <p class="muted">Entradas léxicas generadas por LLMs</p>
+  </div>
+
+  <div class="card">
+    <h2>Objetivo de la rúbrica</h2>
+    <p>
+      La presente rúbrica tiene como finalidad evaluar el grado de <em>user-friendliness</em>
+      de entradas léxicas generadas por modelos de lenguaje de gran escala (LLMs),
+      entendidos como herramientas de consulta léxica funcionalmente comparables a los
+      diccionarios electrónicos.
+    </p>
+    <p>
+      La evaluación se inscribe en el marco de la lexicografía orientada al usuario.
+    </p>
+  </div>
+
+  <div class="card muted">
+    <h2>Consentimiento informado</h2>
+    <p>
+      La participación en esta evaluación es voluntaria. La cumplimentación de la rúbrica
+      implica el consentimiento de las personas participantes para que los datos generados
+      sean utilizados con fines exclusivamente científicos.
+    </p>
+    <p>
+      Los datos se analizarán y difundirán únicamente de forma agregada y anonimizada.
+    </p>
+  </div>
+
+  <form class="card" id="rubricaForm">
+
+    <div class="section">
+      <h2>Identificación</h2>
+      <div class="grid">
+        <div><label>Evaluador/a</label><input type="text" name="evaluador"></div>
+        <div><label>Fecha</label><input type="date" name="fecha"></div>
+       <div>
+  <label>LLM evaluado</label>
+  <select name="llm" id="llmSelect">
+    <option value="">Selecciona un LLM</option>
+    <option value="Gemini">Gemini</option>
+    <option value="ChatGPT">ChatGPT</option>
+    <option value="Claude">Claude</option>
+  </select>
+</div>
+<div class="section llm-section">
+  <h2>Consulta del LLM </h2>
+  <p class="muted">
+    Selecciona un LLM ara consultar la entrada correspondiente.
+   
+  </p>
+
+<p class="muted" id="llmPlaceholder">
+  No hay ningún LLM cargado todavía. Selecciona uno en «LLM» para visualizar los datos y completa la rúbrica
+    mientras consultas la información.
+</p>
+
+  <iframe
+    id="llmFrame"
+    loading="lazy">
+  </iframe>
+</div>
+
+       
+ <div class="section likert-section">
+  <h2>Escala Likert</h2>
+  <p class="muted">
+    1 = Totalmente en desacuerdo · 2 = En desacuerdo · 3 = Ni de acuerdo ni en desacuerdo ·
+    4 = De acuerdo · 5 = Totalmente de acuerdo
+  </p>
+</div>
+
+<div class="section dimensions-section">
+  <h2>Dimensiones</h2>
+  <div id="dims"></div>
+</div>
+
+<div class="section footer bottom-left">
+  <p class="muted">
+   Una vez finalizada la evaluación, descarga los datos generados y envíalos a 
+    <strong>majo.dominguez@usc.es</strong>.
+  </p>
+
+  <button type="button" id="downloadBtn">
+    Descargar resultados (CSV)
+  </button>
+</div>
+
+
+
+  </form>
+
+  <div class="card muted">
+    <p><strong>Evaluación de entradas léxicas generadas por LLMs</strong><br>
+    Iván Arias-Arias · María José Domínguez Vázquez · María Teresa Sanmarco Bande · Carlos Valcárcel Riveiro (2026)</p>
+  </div>
+
+</div>
+
+<script>
+const dims = [
+ ['d1','D1. Claridad definicional orientada al usuario','La definición permite comprender el núcleo semántico del sustantivo en relación con su comportamiento léxico-sintáctico.', ['La definición es clara, no circular y finita','Identifica el tipo de entidad o evento denotado','Anticipa su posible estructura argumental']],
+ ['d2','D2. Adecuación funcional a la tarea','La información responde a la tarea de describir la valencia o combinatoria del sustantivo.', ['Prioriza información relevante para la descripción valencial','Evita datos enciclopédicos irrelevantes','La organización se ajusta a la consulta']],
+ ['d3','D3. Economía cognitiva y presentación','La presentación facilita identificar la estructura argumental.', ['Información estructurada y jerarquizada','Extensión proporcional a la complejidad valencial','Ausencia de redundancias o dispersión']],
+ ['d4','D4. Ejemplificación funcional','Los ejemplos ayudan realmente al usuario a comprender el uso y la combinatoria del sustantivo.', ['Son prototípicos y naturales','Ilustran explícitamente la estructura argumental','Muestran patrones combinatorios relevantes']],
+ ['d5','D5. Gestión del metalenguaje','El metalenguaje empleado es adecuado para describir la estructura argumental y la valencia del sustantivo.', ['Usa terminología comprensible','Explica los términos técnicos cuando aparecen','Evita nociones implícitas no operativas']],
+ ['d6','D6. Transparencia y fiabilidad percibida','La descripción de la combinatoria es fiable y matizada.', ['Distingue patrones habituales de usos contextuales','No generaliza combinaciones marginales','Reconoce restricciones o variación']],
+ ['d7','D7. Consistencia interna','La descripción valencial es coherente en toda la entrada.', ['No hay contradicciones entre definición y ejemplos','Patrones combinatorios coherentes','Enfoque descriptivo estable']],
+ ['d8','D8. Utilidad práctica inmediata','Tras leer la entrada, el usuario puede usar el sustantivo respetando su valencia y combinatoria.', ['Puede construir sintagmas bien formados','Selecciona complementos/preposiciones adecuados','Evita combinaciones no aceptables']],
+ ['d9','D9. Explicitud de la estructura argumental y valencial','La entrada hace explícita la valencia del sustantivo de forma usable.', ['Identifica los participantes argumentales implicados','Identifica los roles categoriales','Indica la realización sintáctica y el número/tipo de argumentos']]
+];
+const wrap = document.getElementById('dims');
+dims.forEach(([name,title,desc,items])=>{
+ const div=document.createElement('div');
+ div.className='dim';
+ div.innerHTML = `<div class="dimhead"><div class="dimtitle">${title}</div></div>`+
+ `<div class="dimdesc">${desc}</div>`+
+ `<div class="scale">`+
+ [1,2,3,4,5].map(v=>`<label><input required type="radio" name="${name}" value="${v}">${v}</label>`).join('')+
+ `</div>`+
+ `<div class="obs"><strong>Ítems observables</strong><ul>`+
+ items.map(i=>`<li>${i}</li>`).join('')+
+ `</ul></div>`;
+ wrap.appendChild(div);
+function downloadCSV() {
+  const form = document.getElementById('rubricaForm');
+  const formData = new FormData(form);
+
+  let rows = [];
+  rows.push(['campo', 'valor']);
+
+  for (const [key, value] of formData.entries()) {
+    rows.push([key, value]);
+  }
+
+  const csvContent = rows
+    .map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rubrica_llm.csv';
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+});
+// --- Descarga de resultados en CSV ---
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const form = document.getElementById('rubricaForm');
+  const data = new FormData(form);
+
+  const rows = [];
+  rows.push(['campo', 'valor']);
+
+  for (const [key, value] of data.entries()) {
+    rows.push([key, value]);
+  }
+
+  const csv = rows
+    .map(row =>
+      row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+    )
+    .join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'rubrica_llm.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);
+});
+// ---------- Visor del LLM (seguro, con DOM cargado) ----------
+document.addEventListener('DOMContentLoaded', () => {
+
+  const llmURLs = {
+    Gemini: 'https://ivanarias98.shinyapps.io/shiny_app_gemini/',
+    ChatGPT: 'https://ivanarias98.shinyapps.io/shiny_app_chatgpt/',
+    Claude: 'https://ivanarias98.shinyapps.io/shiny_app_claude/'
+  };
+
+  const llmSelect = document.getElementById('llmSelect');
+  const llmFrame = document.getElementById('llmFrame');
+
+  if (llmSelect && llmFrame) {
+    llmSelect.addEventListener('change', () => {
+      const selected = llmSelect.value;
+      llmFrame.src = llmURLs[selected] || '';
+    });
+  }
+
+});
+</script>
+</body>
+</html>
